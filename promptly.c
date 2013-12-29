@@ -57,21 +57,22 @@ inline void formatting(lua_State *L) {
 }
 
 static int l_fmt(lua_State *L) {
-    const char* str = lua_tostring(L, 1);
-    if (lua_isnumber(L, 2))
-        lua_pushfstring(L, XTERM_COLOR, lua_tointeger(L, 2), str);
+    const char* str = lua_tostring(L, 2);
+    lua_pop(L, 1);
+    if (lua_isnumber(L, 1))
+        lua_pushfstring(L, XTERM_COLOR, lua_tointeger(L, -1), str);
     else {
         lua_gettable(L, lua_upvalueindex(1));
-        if (!lua_isnumber(L, -1)) {
-            lua_pushvalue(L, 1);
-        } else
+        if (!lua_isnumber(L, -1))
+            lua_pushstring(L, str);
+        else
             lua_pushfstring(L, ANSI_COLOR, lua_tointeger(L, -1), str);
     }
     return 1;
 }
 
 int main(int argc, const char* argv[]) {
-    char  hostname[16];  // ?
+    char  hostname[16];
     const char* confpath = NULL;
     const char* home     = NULL;
     const char* realhome = NULL;
@@ -115,7 +116,7 @@ int main(int argc, const char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "0"))
         env_add(L, "STATUS", argv[1]);
     lua_setglobal(L, "env");
-    lua_pop(L, 1);   // shortpwd
+    lua_pop(L, 1);
 
     lua_newtable(L);
     formatting(L);
@@ -145,3 +146,4 @@ error:
     return 1;
 
 }
+

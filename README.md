@@ -35,12 +35,13 @@ Alternatively, you can just write out your own prompt:
 
 ## Colours and formatting
 
-The `fmt(string, format)` function writes the provided string with the requested formatting:
+The `fmt(string, format)` function returns the provided string with the requested formatting:
 
-    env.USER = fmt(env.USER, "red")
-    env.TIME = fmt(os.date("%H:%M:%S"), "bold")
+    env.USER = fmt("red", env.USER)
+    env.TIME = fmt("bold", os.date("%H:%M:%S"))
+    env.SEP  = fmt(208, env.USER == "root" and "# " or "$ ")
 
-    return "[$TIME] ($USER@$HOST) $PWD $ "
+    return "$TIME ($USER@$HOST) $PWD $SEP "
 
 The available formats are:
 
