@@ -73,16 +73,20 @@ static int l_fmt(lua_State *L) {
 int main(int argc, const char* argv[]) {
     char  hostname[16];  // ?
     const char* confpath = NULL;
-    const char* homed    = NULL;
+    const char* home     = NULL;
+    const char* realhome = NULL;
     const char* pwd      = NULL;
+    const char* shortpwd = NULL;
     const char* termname = NULL;
     const char* username = NULL;
     const char* err      = NULL;
 
     if (!(pwd = getcwd(NULL, 0)))
         ERROR("Error getting working directory");
-    if (!(homed = getenv("HOME")))
+    if (!(home = getenv("HOME")))
         ERROR("Error getting home directory");
+    if (!(realhome = realpath(home, realhome)))
+        ERROR("Error resolving home directory");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
         ERROR( "Error getting username");
     if (!(termname = ttyname(0)))
@@ -93,23 +97,25 @@ int main(int argc, const char* argv[]) {
 
     lua_State* L = luaL_newstate();
     if (!L)
-        ERROR("Error loading Lua state");
+        ERROR("Error initialising Lua state");
     luaL_openlibs(L);
     lua_pushcfunction(L, traceback);
 
-    confpath = lua_pushfstring(L, "%s/%s", homed, CONFNAME);
+    confpath = lua_pushfstring(L, "%s/%s", home, CONFNAME);
     if ((luaL_loadfile(L, confpath)))
         ERROR(lua_tostring(L, -1));
 
+    shortpwd = luaL_gsub(L, pwd, realhome, "~");
     lua_newtable(L);
-    env_add(L, "PWD", pwd);
-    env_add(L, "HOME", homed);
+    env_add(L, "PWD", shortpwd);
+    env_add(L, "HOME", home);
     env_add(L, "USER", username);
     env_add(L, "HOST", hostname);
     env_add(L, "TTY", termname);
     if (argc > 1 && strcmp(argv[1], "0"))
         env_add(L, "STATUS", argv[1]);
     lua_setglobal(L, "env");
+    lua_pop(L, 1);   // shortpwd
 
     lua_newtable(L);
     formatting(L);
