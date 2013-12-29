@@ -12,11 +12,11 @@ Have pkg-config and LuaJIT installed and run `make`, then put `promptly` somewhe
 
 The script has a global table `env` set. Initially it contains these values:
 
-`USER`   your username
-`HOST`   the machine's hostname
-`PWD`    the working directory
-`TTY`    the current tty name
-`STATUS` status of the last executed command if non-zero
+- `USER`   your username
+- `HOST`   the machine's hostname
+- `PWD`    the working directory
+- `TTY`    the current tty name
+- `STATUS` status of the last executed command if non-zero
 
 If the script returns a string it will be used as the prompt, using values from the `env` table like so:
 
@@ -35,16 +35,19 @@ Alternatively, you can just write out your own prompt:
 
 ## Colours and formatting
 
-The `fmt()` function writes the provided string with the requested formatting:
+The `fmt(string, format)` function writes the provided string with the requested formatting:
 
-    env.USER = fmt("red", env.USER)
-    env.TIME = fmt("bold", os.date("%H:%M:%S"))
+    env.USER = fmt(env.USER, "red")
+    env.TIME = fmt(os.date("%H:%M:%S"), "bold")
 
     return "[$TIME] ($USER@$HOST) $PWD $ "
 
-Pass a number as the first argument for xterm colours:
+The available formats are:
 
-    env.PWD = fmt(208, env.PWD)
+- Formatting: **reset**, **bright**, **dim**, **underscore**, **blink**, **reverse**, **hidden**
+- Foreground colours: **black**, **red**, **green**, **yellow**, **blue**, **magenta**, **cyan**, **white**
+- Background colours: **onblack**, **onred**, **ongreen**, **onyellow**, **onblue**, **onmagenta**, **oncyan**, **onwhite**
+- xterm foreground colours: pass a number (0-256)
 
 ## License
 
