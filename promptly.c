@@ -5,19 +5,13 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+#include <luaconf.h>
 
 #define ERROR(e)    do { err = e; goto error; } while (0)
-#define XTERM_COLOR "\x1b[38;5;%dm%s\x1b[0m"
-#define ANSI_COLOR  "\x1b[%dm\x1b[0m"
+#define XTERM_COLOR "\x1b[38;5;%fm"
+#define ANSI_COLOR  "\x1b[%fm"
+#define ANSI_RESET  "\x1b[0m"
 #define CONFNAME    ".promptly"
-
-static int traceback(lua_State* L) {
-    const char *msg;
-    msg = lua_tostring(L, 1);
-    if (!msg) return 0;
-    luaL_traceback(L, L, msg, 1);
-    return 1;
-}
 
 inline void env_add(lua_State *L, const char* k, const char* v) {
     lua_pushstring(L, v);
@@ -56,51 +50,66 @@ inline void formatting(lua_State *L) {
     fmt_add(L, "onwhite", 47);
 }
 
+static int l_traceback(lua_State* L) {
+    const char *msg;
+    msg = lua_tostring(L, 1);
+    if (!msg) return 0;
+    luaL_traceback(L, L, msg, 1);
+    return 1;
+}
+
 static int l_fmt(lua_State *L) {
-    const char* str = lua_tostring(L, 2);
-    lua_pop(L, 1);
-    if (lua_isnumber(L, 1))
-        lua_pushfstring(L, XTERM_COLOR, lua_tointeger(L, -1), str);
-    else {
-        lua_gettable(L, lua_upvalueindex(1));
-        if (!lua_isnumber(L, -1))
-            lua_pushstring(L, str);
-        else
-            lua_pushfstring(L, ANSI_COLOR, lua_tointeger(L, -1), str);
+    luaL_Buffer buf;
+    int top = lua_gettop(L);
+    const char *str = NULL;
+
+    luaL_buffinit(L, &buf);
+    if (top > 1) {
+        str = lua_tostring(L, top);
+        lua_pop(L, 1);
     }
+    for (;lua_gettop(L) > 0;) {
+        if (lua_isnumber(L, -1)) {
+            lua_pushfstring(L, XTERM_COLOR, lua_tonumber(L, -1));
+        } else {
+            lua_gettable(L, lua_upvalueindex(1));
+            if (lua_isnil(L, -1)) {
+                lua_pop(L, 1);
+                continue;
+            }
+            lua_pushfstring(L, ANSI_COLOR, lua_tonumber(L, -1));
+        }
+        luaL_addvalue(&buf);
+        lua_pop(L, 1);
+    }
+    if (str != NULL) {
+        luaL_addstring(&buf, str);
+        luaL_addstring(&buf, ANSI_RESET);
+    }
+    luaL_pushresult(&buf);
     return 1;
 }
 
 int main(int argc, const char* argv[]) {
     char  hostname[16];
-    const char* confpath = NULL;
-    const char* home     = NULL;
-    const char* realhome = NULL;
-    const char* pwd      = NULL;
-    const char* shortpwd = NULL;
-    const char* termname = NULL;
-    const char* username = NULL;
-    const char* err      = NULL;
+    char* realhome = NULL;
+    const char *confpath, *home, *pwd, *shortpwd, *termname, *username, *err;
+    confpath = pwd = shortpwd = termname = err = NULL;
 
-    if (!(pwd = getcwd(NULL, 0)))
-        ERROR("Error getting working directory");
-    if (!(home = getenv("HOME")))
-        ERROR("Error getting home directory");
-    if (!(realhome = realpath(home, realhome)))
-        ERROR("Error resolving home directory");
+    if (!(pwd = getcwd(NULL, 0)))  ERROR("getcwd()");
+    if (!(home = getenv("HOME")))  ERROR("getenv(\"HOME\")");
+    if (!(realhome = realpath(home, realhome))) ERROR("realpath()");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
-        ERROR( "Error getting username");
-    if (!(termname = ttyname(0)))
-        ERROR("Error getting tty name");
-    if (gethostname(hostname, 15))
-        ERROR("Error getting hostname");
+        ERROR( "getenv(\"USER\")");
+    if (!(termname = ttyname(0)))  ERROR("ttyname()");
+    if (gethostname(hostname, 15)) ERROR("gethostname()");
     hostname[15] = '\0';
 
     lua_State* L = luaL_newstate();
     if (!L)
-        ERROR("Error initialising Lua state");
+        ERROR("luaL_newstate()");
     luaL_openlibs(L);
-    lua_pushcfunction(L, traceback);
+    lua_pushcfunction(L, l_traceback);
 
     confpath = lua_pushfstring(L, "%s/%s", home, CONFNAME);
     if ((luaL_loadfile(L, confpath)))
@@ -141,9 +150,7 @@ int main(int argc, const char* argv[]) {
     return 0;
 
 error:
-    
     printf("Error: %s\n$ ", err);
     return 1;
-
 }
 

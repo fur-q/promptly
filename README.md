@@ -1,10 +1,12 @@
 # promptly
 
-promptly is a shell prompt, except I put a Lua in it.
+promptly is a shell prompt which has had a Lua put in it.
 
 ## Installation
 
-Have pkg-config and LuaJIT installed and run `make`, then put `promptly` somewhere on your `$PATH`.
+- Have pkg-config and Lua 5.2 or LuaJIT installed
+- Run `make LUA=lua-5.2` to build with Lua 5.2, or `make` to build with LuaJIT
+- Put `promptly` somewhere on your PATH
 
 ## Usage
 
@@ -35,24 +37,20 @@ Alternatively, you can just write out your own prompt:
 
 ## Colours and formatting
 
-The `fmt(string, format)` function returns the provided string with the requested formatting:
+Use `fmt()` for text formatting. The following examples all print "hello there" in bold (or bright) red text:
 
-    env.USER = fmt("red", env.USER)
-    env.TIME = fmt("bold", os.date("%H:%M:%S"))
-    env.SEP  = fmt(208, env.USER == "root" and "# " or "$ ")
-
-    return "$TIME ($USER@$HOST) $PWD $SEP "
+    local hello = fmt("red") .. fmt("bright") .. "hello there" .. fmt("reset")
+    local elloh = fmt("red", fmt("bright", "hello there"))
+    local llohe = fmt("red", "bright", "hello there")
 
 The available formats are:
 
 - Formatting: **reset**, **bright**, **dim**, **underscore**, **blink**, **reverse**, **hidden**
 - Foreground colours: **black**, **red**, **green**, **yellow**, **blue**, **magenta**, **cyan**, **white**
 - Background colours: **onblack**, **onred**, **ongreen**, **onyellow**, **onblue**, **onmagenta**, **oncyan**, **onwhite**
-- xterm foreground colours: pass a number (0-256)
+- xterm foreground colours: a number (0-256)
 
 ## License
 
 See LICENSE.
-
-
 
