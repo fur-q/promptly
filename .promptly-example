@@ -1,10 +1,10 @@
 io.write(
-    fmt("(", 160),
+    fmt("red", "("),
     env.USER,
-    fmt("@", 160),
+    fmt("red", "@"),
     env.HOST,
-    fmt(") ", 160),
-    fmt(env.PWD, 220),
+    fmt("red", ") "),
+    fmt("bright", env.PWD),
     " ",
     fmt(env.USER == "root" and "# " or "$ ", 160)
 )
