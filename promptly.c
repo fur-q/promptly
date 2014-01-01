@@ -5,7 +5,6 @@
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
-#include <luaconf.h>
 
 #define ERROR(e)    do { err = e; goto error; } while (0)
 #define XTERM_COLOR "\x1b[38;5;%fm"
