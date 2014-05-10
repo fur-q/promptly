@@ -4,9 +4,10 @@ promptly is a shell prompt which has had a Lua put in it.
 
 ## Installation
 
-- Have pkg-config and Lua 5.2 or LuaJIT installed
-- Run `make LUA=lua-5.2` to build with Lua 5.2, or `make` to build with LuaJIT
+- Have pkg-config and LuaJIT or Lua 5.2 installed
+- Run `make` to build with LuaJIT, or `make LUA=lua-5.2` to build with Lua 5.2
 - Put `promptly` somewhere on your PATH
+- Put `PS1='$(promptly $?)'` in your `.bashrc` or equivalent
 
 ## Usage
 
@@ -37,11 +38,14 @@ Alternatively, you can just write out your own prompt:
 
 ## Colours and formatting
 
-Use `fmt()` for text formatting. The following examples all print "hello there" in bold (or bright) red text:
+Use `fmt()` for text formatting. The following examples both print "hello there" in red:
 
-    local hello = fmt("red") .. fmt("bright") .. "hello there" .. fmt("reset")
-    local elloh = fmt("red", fmt("bright", "hello there"))
-    local llohe = fmt("red", "bright", "hello there")
+    print( fmt("red") .. "hello there" .. fmt("reset") )
+    print( fmt("red", "hello there") )  -- automatically resets
+
+More than one format may be applied at once:
+
+    print( fmt("red", "bright", "hello there") )
 
 The available formats are:
 
