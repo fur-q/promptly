@@ -72,9 +72,8 @@ static int l_fmt(lua_State *L) {
             lua_pushfstring(L, XTERM_COLOR, lua_tonumber(L, -1));
         } else {
             lua_gettable(L, lua_upvalueindex(1));
-            if (lua_isnil(L, -1)) {
+            if (lua_isnil(L, -1))
                 goto skip;
-            }
             lua_pushfstring(L, ANSI_COLOR, lua_tonumber(L, -1));
         }
         luaL_addvalue(&buf);
