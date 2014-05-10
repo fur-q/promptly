@@ -7,9 +7,9 @@
 #include <lualib.h>
 
 #define ERROR(e)    do { err = e; goto error; } while (0)
-#define XTERM_COLOR "\x1b[38;5;%fm"
-#define ANSI_COLOR  "\x1b[%fm"
-#define ANSI_RESET  "\x1b[0m"
+#define XTERM_COLOR "\001\x1b[38;5;%fm\002"
+#define ANSI_COLOR  "\001\x1b[%fm\002"
+#define ANSI_RESET  "\001\x1b[0m\002"
 #define CONFNAME    ".promptly"
 
 inline void env_add(lua_State *L, const char* k, const char* v) {
@@ -52,33 +52,33 @@ inline void formatting(lua_State *L) {
 static int l_traceback(lua_State* L) {
     const char *msg;
     msg = lua_tostring(L, 1);
-    if (!msg) return 0;
+    if (!msg)
+        return 0;
     luaL_traceback(L, L, msg, 1);
     return 1;
 }
 
 static int l_fmt(lua_State *L) {
     luaL_Buffer buf;
-    int top = lua_gettop(L);
     const char *str = NULL;
 
     luaL_buffinit(L, &buf);
-    if (top > 1) {
-        str = lua_tostring(L, top);
+    if (lua_gettop(L) > 1) {
+        str = lua_tostring(L, -1);
         lua_pop(L, 1);
     }
-    for (;lua_gettop(L) > 0;) {
+    while (lua_gettop(L) > 0) {
         if (lua_isnumber(L, -1)) {
             lua_pushfstring(L, XTERM_COLOR, lua_tonumber(L, -1));
         } else {
             lua_gettable(L, lua_upvalueindex(1));
             if (lua_isnil(L, -1)) {
-                lua_pop(L, 1);
-                continue;
+                goto skip;
             }
             lua_pushfstring(L, ANSI_COLOR, lua_tonumber(L, -1));
         }
         luaL_addvalue(&buf);
+skip:
         lua_pop(L, 1);
     }
     if (str != NULL) {
@@ -95,13 +95,19 @@ int main(int argc, const char* argv[]) {
     const char *confpath, *home, *pwd, *shortpwd, *termname, *username, *err;
     confpath = pwd = shortpwd = termname = err = NULL;
 
-    if (!(pwd = getcwd(NULL, 0)))  ERROR("getcwd()");
-    if (!(home = getenv("HOME")))  ERROR("getenv(\"HOME\")");
-    if (!(realhome = realpath(home, realhome))) ERROR("realpath()");
+    if (!(pwd = getcwd(NULL, 0)))  
+        ERROR("pwd");
+    if (!(home = getenv("HOME")))  
+        ERROR("home");
+    if (!(realhome = realpath(home, realhome))) 
+        ERROR("realpath");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
-        ERROR( "getenv(\"USER\")");
-    if (!(termname = ttyname(0)))  ERROR("ttyname()");
-    if (gethostname(hostname, 15)) ERROR("gethostname()");
+        ERROR( "username");
+    if (!(termname = ttyname(0)))  
+        ERROR("termname");
+    if (gethostname(hostname, 15)) 
+        ERROR("hostname");
+
     hostname[15] = '\0';
 
     lua_State* L = luaL_newstate();
