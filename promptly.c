@@ -12,46 +12,24 @@
 #define ANSI_RESET  "\001\x1b[0m\002"
 #define CONFNAME    ".promptly"
 
-inline void env_add(lua_State *L, const char* k, const char* v) {
-    lua_pushstring(L, v);
-    lua_setfield(L, -2, k);
-}
+typedef struct fmt_t {
+    const char *key;
+    short       val;
+} fmt_t;
 
-inline void fmt_add(lua_State *L, const char* k, int v) {
-    lua_pushstring(L, k);
-    lua_pushnumber(L, v);
-    lua_settable(L, -3);
-}
-
-inline void formatting(lua_State *L) {
-    fmt_add(L, "reset", 0);
-    fmt_add(L, "bright", 1);
-    fmt_add(L, "dim", 2);
-    fmt_add(L, "underscore", 4);
-    fmt_add(L, "blink", 5);
-    fmt_add(L, "reverse", 7);
-    fmt_add(L, "hidden", 8);
-    fmt_add(L, "black", 30);
-    fmt_add(L, "red", 31);
-    fmt_add(L, "green", 32);
-    fmt_add(L, "yellow", 33);
-    fmt_add(L, "blue", 34);
-    fmt_add(L, "magenta", 35);
-    fmt_add(L, "cyan", 36);
-    fmt_add(L, "white", 37);
-    fmt_add(L, "onblack", 40);
-    fmt_add(L, "onred", 41);
-    fmt_add(L, "ongreen", 42);
-    fmt_add(L, "onyellow", 43);
-    fmt_add(L, "onblue", 44);
-    fmt_add(L, "onmagenta", 45);
-    fmt_add(L, "oncyan", 46);
-    fmt_add(L, "onwhite", 47);
-}
+fmt_t formats[] = {
+    { "reset",      0 }, { "bright",   1 }, { "dim",        2 },
+    { "underscore", 4 }, { "blink",    5 }, { "reverse",    7 },
+    { "hidden",     8 }, { "black",   30 }, { "red",       31 },
+    { "green",     32 }, { "yellow",  33 }, { "blue",      34 },
+    { "magenta",   35 }, { "cyan",    36 }, { "white",     37 },
+    { "onblack",   40 }, { "onred",   41 }, { "ongreen",   42 },
+    { "onyellow",  43 }, { "onblue",  44 }, { "onmagenta", 45 },
+    { "oncyan",    46 }, { "onwhite", 47 }, { NULL, 0 }
+};
 
 static int l_traceback(lua_State* L) {
-    const char *msg;
-    msg = lua_tostring(L, 1);
+    const char *msg = lua_tostring(L, 1);
     if (!msg)
         return 0;
     luaL_traceback(L, L, msg, 1);
@@ -88,9 +66,15 @@ skip:
     return 1;
 }
 
+inline void env_add(lua_State *L, const char* k, const char* v) {
+    lua_pushstring(L, v);
+    lua_setfield(L, -2, k);
+}
+
 int main(int argc, const char* argv[]) {
+    int   i;
     char  hostname[16];
-    char* realhome = NULL;
+    char *realhome = NULL;
     const char *confpath, *home, *pwd, *shortpwd, *termname, *username, *err;
     confpath = pwd = shortpwd = termname = err = NULL;
 
@@ -101,12 +85,11 @@ int main(int argc, const char* argv[]) {
     if (!(realhome = realpath(home, realhome))) 
         ERROR("realpath");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
-        ERROR( "username");
+        ERROR("username");
     if (!(termname = ttyname(0)))  
         ERROR("termname");
     if (gethostname(hostname, 15)) 
         ERROR("hostname");
-
     hostname[15] = '\0';
 
     lua_State* L = luaL_newstate();
@@ -132,7 +115,11 @@ int main(int argc, const char* argv[]) {
     lua_pop(L, 1);
 
     lua_newtable(L);
-    formatting(L);
+    for (i = 0; formats[i].key != NULL; i++) {
+        lua_pushstring(L, formats[i].key);
+        lua_pushnumber(L, formats[i].val);
+        lua_settable(L, -3);
+    }
     lua_pushcclosure(L, l_fmt, 1);
     lua_setglobal(L, "fmt");
 
