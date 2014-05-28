@@ -5,34 +5,32 @@ promptly is a shell prompt which has had a Lua put in it.
 ## Installation
 
 - Have pkg-config and LuaJIT or Lua 5.2 installed
-- Run `make` to build with LuaJIT, or `make LUA=lua-5.2` to build with Lua 5.2
+- Figure out what your distro has decided to call your LuaJIT or Lua 5.2 pkg-config package (probably `luajit`, `lua5.2` or `lua-5.2`)
+- Run `make LUA=myluapkgconfigname`
 - Put `promptly` somewhere on your PATH
-- Put `PS1='$(promptly $?)'` in your `.bashrc` or equivalent
+- Add `PS1='$(promptly $?)'` to your `.bashrc`, or the config file of whatever dumb esoteric shell you use while picking pipe tobacco out of your beard
 
 ## Usage
 
-`promptly` expects to find a lua script at `$HOME/.promptly`. If there isn't one, `promptly` will complain and give you a very dull prompt.
+`promptly` expects to find a lua script at `$HOME/.promptly`. If there isn't one, `promptly` will complain, and default to a very dull prompt.
 
 The script has a global table `env` set. Initially it contains these values:
 
+- `PWD`    the current working directory
 - `USER`   your username
 - `HOST`   the machine's hostname
 - `PWD`    the working directory
 - `TTY`    the current tty name
 - `STATUS` status of the last executed command if non-zero
 
-If the script returns a string it will be used as the prompt, using values from the `env` table like so:
-
-    return "($USER@$HOST) $PWD $ "
-
-You can add your own values to `env`:
+If the script returns a string it will be used as the prompt, interpolated with the values from `env` like so:`
 
     local time = os.date("%H:%M:%S")
     env.TIME = time
     
     return "[$TIME] ($USER@$HOST) $PWD $ "
 
-Alternatively, you can just write out your own prompt:
+If the script doesn't return a string, it's assumed you wrote out your own prompt (as below), and nothing else is printed.
 
     io.write( "(", env.USER, "@", env.HOST, ")", env.PWD, " $ " )
 

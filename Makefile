@@ -1,5 +1,5 @@
 LUA     = luajit
-CFLAGS  = `pkg-config --cflags $(LUA)` -Wall -fPIC -O2 
+CFLAGS  = `pkg-config --cflags $(LUA)` -Wall -fPIC -O2
 LDFLAGS = `pkg-config --libs $(LUA)`
 
 promptly: promptly.o 

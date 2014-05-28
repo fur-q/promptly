@@ -6,6 +6,6 @@ io.write(
     fmt("red", ") "),
     fmt("bright", env.PWD),
     " ",
-    fmt(env.USER == "root" and "# " or "$ ", 160)
+    fmt(160, env.USER == "root" and "# " or "$ ")
 )
 

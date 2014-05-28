@@ -6,18 +6,20 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-#define DIE(e)      do { err = e; goto error; } while (0)
+#define DIE(e)      do { err = e; goto dead; } while (0)
+#define LDIE()      DIE(lua_tostring(L, -1))
+
 #define XTERM_COLOR "\1\33[38;5;%fm\2"
 #define ANSI_COLOR  "\1\33[%fm\2"
 #define ANSI_RESET  "\1\33[0m\2"
 #define CONFNAME    ".promptly"
 
-typedef struct fmt_t {
+struct fmt_t {
     const char *key;
     short val;
-} fmt_t;
+};
 
-fmt_t formats[] = {
+struct fmt_t formats[] = {
     { "reset",      0 }, { "bright",   1 }, { "dim",        2 },
     { "underscore", 4 }, { "blink",    5 }, { "reverse",    7 },
     { "hidden",     8 }, { "black",   30 }, { "red",       31 },
@@ -28,7 +30,7 @@ fmt_t formats[] = {
     { "oncyan",    46 }, { "onwhite", 47 }, { NULL, 0 }
 };
 
-static int l_traceback(lua_State* L) {
+static int l_traceback(lua_State *L) {
     const char *msg = lua_tostring(L, 1);
     if (!msg)
         return 0;
@@ -50,11 +52,11 @@ static int l_fmt(lua_State *L) {
         } else {
             lua_gettable(L, lua_upvalueindex(1));
             if (lua_isnil(L, -1))
-                goto skip;
+                goto next;
             lua_pushfstring(L, ANSI_COLOR, lua_tonumber(L, -1));
         }
         luaL_addvalue(&buf);
-skip:
+next:
         lua_pop(L, 1);
     }
     if (str != NULL) {
@@ -65,24 +67,24 @@ skip:
     return 1;
 }
 
-inline void env_add(lua_State *L, const char* k, const char* v) {
+inline void env_add(lua_State *L, const char *k, const char *v) {
     lua_pushstring(L, v);
     lua_setfield(L, -2, k);
 }
 
-int main(int argc, const char* argv[]) {
+int main(int argc, const char *argv[]) {
     int  i;
     char hostname[16];
     char *realhome = NULL;
-    const char *confpath, *home, *pwd, *shortpwd, *termname, *username, *err;
-    confpath = pwd = shortpwd = termname = err = NULL;
+    const char *confpath, *home, *pwd, *termname, *username, *shortpwd, *err;
+    confpath = pwd = termname = err = NULL;
 
     if (!(pwd = getcwd(NULL, 0)))  
         DIE("pwd");
     if (!(home = getenv("HOME")))  
         DIE("home");
     if (!(realhome = realpath(home, realhome))) 
-        DIE("realpath");
+        DIE("realhome");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
         DIE("username");
     if (!(termname = ttyname(0)))  
@@ -93,13 +95,17 @@ int main(int argc, const char* argv[]) {
 
     lua_State *L = luaL_newstate();
     if (!L)
-        DIE("luaL_newstate()");
+        DIE("luaL_newstate");
     luaL_openlibs(L);
     lua_pushcfunction(L, l_traceback);
-    confpath = lua_pushfstring(L, "%s/%s", home, CONFNAME);
-    if ((luaL_loadfile(L, confpath)))
-        DIE(lua_tostring(L, -1));
+
     shortpwd = luaL_gsub(L, pwd, realhome, "~");
+    lua_pop(L, 1);
+
+    confpath = lua_pushfstring(L, "%s/%s", realhome, CONFNAME);
+    if ((luaL_loadfile(L, confpath)))
+        LDIE();
+
     lua_newtable(L);
     env_add(L, "PWD", shortpwd);
     env_add(L, "HOME", home);
@@ -109,32 +115,36 @@ int main(int argc, const char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "0"))
         env_add(L, "STATUS", argv[1]);
     lua_setglobal(L, "env");
-    lua_pop(L, 1);
+
     lua_newtable(L);
     for (i = 0; formats[i].key != NULL; i++) {
         lua_pushstring(L, formats[i].key);
         lua_pushnumber(L, formats[i].val);
         lua_settable(L, -3);
     }
+
     lua_pushcclosure(L, l_fmt, 1);
     lua_setglobal(L, "fmt");
+
     if (lua_pcall(L, 0, 1, 1))
-        DIE(lua_tostring(L, -1));
+        LDIE();
     if (!lua_isstring(L, 3))
         return 0;
+
     lua_getglobal(L, "string");
     lua_getfield(L, -1, "gsub");
     lua_pushvalue(L, 3);
     lua_pushliteral(L, "%$(%u+)");
     lua_getglobal(L, "env");
     if (lua_pcall(L, 3, 1, 1))
-        DIE(lua_tostring(L, -1));
+        LDIE();
     printf("%s", lua_tostring(L, -1));
+
     lua_close(L);
     return 0;
 
-error:
-    printf("Error: %s\n$ ", err);
+dead:
+    fprintf(stderr, "FATAL: %s\n$ ", err);
     return 1;
 }
 
