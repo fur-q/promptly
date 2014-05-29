@@ -5,10 +5,11 @@ promptly is a shell prompt which has had a Lua put in it.
 ## Installation
 
 - Have pkg-config and LuaJIT or Lua 5.2 installed
-- Figure out what your distro has decided to call your LuaJIT or Lua 5.2 pkg-config package (probably `luajit`, `lua5.2` or `lua-5.2`)
-- Run `make LUA=myluapkgconfigname`
+- Run `make LUA=xyz`, replacing `xyz` with your LuaJIT or Lua 5.2 pkg-config name
 - Put `promptly` somewhere on your PATH
 - Add `PS1='$(promptly $?)'` to your `.bashrc`, or the config file of whatever dumb esoteric shell you use while picking pipe tobacco out of your beard
+
+If you don't know the right pkg-config name for your distro, run `pkg-config --list-all | grep lua`.
 
 ## Usage
 
@@ -51,6 +52,14 @@ The available formats are:
 - Foreground colours: **black**, **red**, **green**, **yellow**, **blue**, **magenta**, **cyan**, **white**
 - Background colours: **onblack**, **onred**, **ongreen**, **onyellow**, **onblue**, **onmagenta**, **oncyan**, **onwhite**
 - xterm foreground colours: a number (0-256)
+
+## Known bugs
+
+Lines will wrap too early when using formatting. Non-printable characters seem to be correctly escaped, and the prompt otherwise behaves correctly in this regard, so I'm pretty much stumped on this one.
+
+## What, no Lua 5.1?
+
+If you explicitly need Lua 5.1 support (and I really can't imagine why you would) you'll need to implement [luaL_traceback](https://github.com/hishamhm/lua-compat-5.2/blob/master/c-api/compat-5.2.c#L228) yourself.
 
 ## License
 

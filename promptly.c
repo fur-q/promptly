@@ -79,17 +79,17 @@ int main(int argc, const char *argv[]) {
     const char *confpath, *home, *pwd, *termname, *username, *shortpwd, *err;
     confpath = pwd = termname = err = NULL;
 
-    if (!(pwd = getcwd(NULL, 0)))  
+    if (!(pwd = getcwd(NULL, 0)))
         DIE("pwd");
-    if (!(home = getenv("HOME")))  
+    if (!(home = getenv("HOME")))
         DIE("home");
-    if (!(realhome = realpath(home, realhome))) 
+    if (!(realhome = realpath(home, realhome)))
         DIE("realhome");
     if (!((username = getenv("USER")) || (username = getenv("LOGNAME"))))
         DIE("username");
-    if (!(termname = ttyname(0)))  
+    if (!(termname = ttyname(0)))
         DIE("termname");
-    if (gethostname(hostname, 15)) 
+    if (gethostname(hostname, 15))
         DIE("hostname");
     hostname[15] = '\0';
 

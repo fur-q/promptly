@@ -7,4 +7,3 @@ promptly: promptly.o
 
 clean:
 	-rm -f promptly promptly.o
-

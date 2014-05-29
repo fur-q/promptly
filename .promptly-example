@@ -4,8 +4,8 @@ io.write(
     fmt("red", "@"),
     env.HOST,
     fmt("red", ") "),
-    fmt("bright", env.PWD),
+    fmt("yellow", "bright", env.PWD),
     " ",
-    fmt(160, env.USER == "root" and "# " or "$ ")
+    fmt(red, env.USER == "root" and "# " or "$ ")
 )
 
